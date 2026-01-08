@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { ClientGatewayModule } from './../src/client-gateway.module';
+import { ClientGatewayModule } from '../src/app.module';
 
 describe('ClientGatewayController (e2e)', () => {
   let app: INestApplication;
