@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-
+import { Repository } from 'typeorm';
 import { PaginationDto } from '../../common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+
+import { Product } from './entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { Product } from './entities/product.entity';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class ProductsService {
@@ -17,14 +17,20 @@ export class ProductsService {
 
   ) { }
 
-  create(createProductDto: CreateProductDto) {
 
-    const { name, price } = createProductDto
-    return this.productRepository.create({
-      name,
-      price
-    });
+  async create(createProductDto: CreateProductDto) {
+    try {
+      const product = this.productRepository.create(createProductDto);
+      return await this.productRepository.save(product);
 
+    } catch (error) {
+
+      if (error.code === '23505') {
+        throw new ConflictException('El producto ya existe en la base de datos');
+      }
+
+      throw new InternalServerErrorException('Error inesperado, revise los logs del servidor');
+    }
   }
 
   async findAll(paginationDto: PaginationDto) {

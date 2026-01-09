@@ -1,5 +1,5 @@
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { Controller, ParseIntPipe, Post } from '@nestjs/common';
+import { Controller, Get, ParseIntPipe, Post } from '@nestjs/common';
 
 import { PaginationDto } from '../../common';
 import { ProductsService } from './products.service';
