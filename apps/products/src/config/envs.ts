@@ -34,7 +34,7 @@ const envVars: EnvVars = value;
 export const envs = {
   port_products: envVars.PORT_PRODUCTS,
   dbhost: envVars.DB_HOST,
-  dbport: envVars.DB_HOST,
+  dbport: envVars.DB_PORT,
   dbname: envVars.DB_NAME,
   dbusername: envVars.DB_USERNAME,
   password: envVars.DB_PASSWORD,

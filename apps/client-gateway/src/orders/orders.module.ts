@@ -5,7 +5,6 @@ import { envs, ORDERS_SERVICE } from '../config';
 import { OrdersController } from './orders.controller';
 
 
-
 @Module({
   controllers: [OrdersController],
   providers: [],
