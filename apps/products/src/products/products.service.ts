@@ -171,5 +171,28 @@ export class ProductsService {
     }
   }
 
+  // async validateProducts(ids: number[]) {
+  //   ids = Array.from(new Set(ids));
+
+  //   const products = await this.productRepository.findBy({
+  //     where: {
+  //       id: {
+  //         in: ids
+  //       }
+  //     }
+  //   });
+
+  //   if ( products.length !== ids.length ) {
+  //     throw new RpcException({
+  //       message: 'Some products were not found',
+  //       status: HttpStatus.BAD_REQUEST,
+  //     });
+  //   }
+
+
+  //   return products;
+
+  // }
+
 
 }
