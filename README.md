@@ -31,4 +31,7 @@
 3. Crear un archivo `.env` basado en el `env.template`
 4. Ejecutar migración de Base de datos
 5. Levantar la base de datos con `docker compose up -d`
-5. Ejecutar `npm run start:dev`
+5. Ejecutar 
+ `npm run start:gateway`
+ `npm run start:products`
+ `npm run start:orders`
