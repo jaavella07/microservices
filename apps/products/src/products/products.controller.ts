@@ -1,5 +1,5 @@
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { Controller, Get, ParseIntPipe, Post } from '@nestjs/common';
+import { Controller, ParseIntPipe } from '@nestjs/common';
 
 import { PaginationDto } from '../../common';
 import { ProductsService } from './products.service';
@@ -23,19 +23,28 @@ export class ProductsController {
     return this.productsService.findAll(paginationDto);
   }
 
+  // @Get(':id')
   @MessagePattern({ cmd: 'find_one_product' })
-  findOne(@Payload('id') id: string) {
+  findOne(@Payload('id', ParseIntPipe) id: string) {
     return this.productsService.findOne(id);
   }
 
+  // @Patch(':id')
   @MessagePattern({ cmd: 'update_product' })
-  update(@Payload() payload: { id: string; updateProductDto: UpdateProductDto }) {
-    const { id, updateProductDto } = payload;
-    return this.productsService.update(id, updateProductDto);
+  update(
+    @Payload() updateProductDto: UpdateProductDto,
+  ) {
+    return this.productsService.update(updateProductDto.id, updateProductDto);
   }
 
+  // @Delete(':id')
   @MessagePattern({ cmd: 'delete_product' })
-  remove(@Payload('id') id: string) {
+  remove(@Payload('id', ParseIntPipe) id: string) {
     return this.productsService.remove(id);
+  }
+
+  @MessagePattern({ cmd: 'validate_products' })
+  validateProduct(@Payload() ids: number[]) {
+    return this.productsService.validateProducts(ids);
   }
 }

@@ -30,13 +30,17 @@ export class OrdersService {
   ) { }
 
   async create(createOrderDto: CreateOrderDto) {
+    
     try {
       // 1. Confirmar los ids de los productos
       const productIds = createOrderDto.items.map((item) => item.productId);
+      this.logger.log(`Validating products: ${productIds.join(', ')}`);
+
       const products: any[] = await firstValueFrom(
         this.productsClient.send({ cmd: 'validate_products' }, productIds),
       );
 
+      this.logger.log(`Products validated: ${products.length} products found`);
       // 2. Cálculos de los valores
       const totalAmount = createOrderDto.items.reduce((acc, orderItem) => {
         const price = products.find(
@@ -48,6 +52,8 @@ export class OrdersService {
       const totalItems = createOrderDto.items.reduce((acc, orderItem) => {
         return acc + orderItem.quantity;
       }, 0);
+
+      this.logger.log(`Order totals - Amount: ${totalAmount}, Items: ${totalItems}`);
 
       // 3. Crear una transacción de base de datos con TypeORM
       const queryRunner = this.orderRepository.manager.connection.createQueryRunner();
@@ -61,7 +67,9 @@ export class OrdersService {
           totalItems: totalItems,
         });
 
+        this.logger.log('Saving order...');
         const savedOrder = await queryRunner.manager.save(order);
+        this.logger.log(`Order saved with ID: ${savedOrder.id}`);
 
         // Crear los items de la orden
         const orderItems = createOrderDto.items.map((orderItem) => {
@@ -76,9 +84,11 @@ export class OrdersService {
           return orderItemEntity;
         });
 
+        this.logger.log(`Saving ${orderItems.length} order items...`);
         await queryRunner.manager.save(orderItems);
 
         await queryRunner.commitTransaction();
+        this.logger.log('Transaction committed successfully');
 
         // Cargar la orden con sus items
         const orderWithItems = await this.orderRepository.findOne({

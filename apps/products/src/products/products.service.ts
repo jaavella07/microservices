@@ -1,7 +1,7 @@
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { PaginationDto } from '../../common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ConflictException, HttpStatus, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 
 import { Product } from './entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -19,180 +19,82 @@ export class ProductsService {
   ) { }
 
   async create(createProductDto: CreateProductDto) {
-    try {
-      const product = this.productRepository.create(createProductDto);
-      const savedProduct = await this.productRepository.save(product);
-
-      return savedProduct;
-
-    } catch (error) {
-
-      if (error.code === '23505') {
-        throw new RpcException({
-          status: 409,
-          message: 'El producto ya existe en la base de datos',
-        });
-      }
-
-      throw new RpcException({
-        status: 500,
-        message: `Error inesperado al crear el producto: ${error.message}`,
-      });
-    }
+    const product = this.productRepository.create(createProductDto);
+    return await this.productRepository.save(product);
   }
 
   async findAll(paginationDto: PaginationDto) {
-
     const { page = 0, limit = 10 } = paginationDto;
 
-    const totalPages = await this.productRepository.count({ where: { available: true } });
-    const lastPage = Math.ceil(totalPages / limit);
+    const [data, total] = await this.productRepository.findAndCount({
+      where: { available: true },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    const lastPage = Math.ceil(total / limit);
 
     return {
-      data: await this.productRepository.find({
-        skip: (page - 1) * limit,
-        take: limit,
-        where: {
-          available: true
-        }
-      }),
+      data,
       meta: {
-        total: totalPages,
-        page: page,
-        lastPage: lastPage,
-      }
-    }
+        total,
+        page,
+        lastPage,
+      },
+    };
   }
 
   async findOne(id: string) {
-    try {
-      const product = await this.productRepository.findOne({
-        where: { id, available: true }
-      });
+    const product = await this.productRepository.findOne({
+      where: { id, available: true },
+    });
 
-      if (!product) {
-        throw new RpcException({
-          status: 404,
-          message: `Product with id #${id} not found`
-        });
-      }
-
-      return product;
-
-    } catch (error) {
-      this.logger.error(`Error finding product with id ${id}:`, error);
-
-      if (error instanceof RpcException) {
-        throw error;
-      }
-
+    if (!product) {
       throw new RpcException({
-        status: 500,
-        message: `Error al buscar el producto: ${error.message}`
+        message: `Product with id #${id} not found`,
+        status: HttpStatus.BAD_REQUEST,
       });
     }
+
+    return product;
   }
 
   async update(id: string, updateProductDto: UpdateProductDto) {
-    try {
-      const { id: __, ...data } = updateProductDto;
+    const { id: __, ...data } = updateProductDto;
 
-      // Verificar que el producto existe
-      await this.findOne(id);
-
-      // Precargar el producto con los nuevos datos
-      const product = await this.productRepository.preload({
-        id,
-        ...data
-      });
-
-      if (!product) {
-        throw new RpcException({
-          status: 404,
-          message: `Product with id #${id} not found`
-        });
-      }
-
-      // Guardar los cambios
-      return await this.productRepository.save(product);
-
-    } catch (error) {
-      this.logger.error(`Error updating product with id ${id}:`, error);
-
-      if (error instanceof RpcException) {
-        throw error;
-      }
-
-      if (error.code === '23505') {
-        throw new RpcException({
-          status: 409,
-          message: 'Ya existe un producto con ese nombre',
-        });
-      }
-
-      throw new RpcException({
-        status: 500,
-        message: `Error al actualizar el producto: ${error.message}`
-      });
-    }
+    await this.findOne(id);
+    await this.productRepository.update({ id }, data);
+    return this.findOne(id);
   }
 
   async remove(id: string) {
-    try {
-      // Verificar que el producto existe
-      await this.findOne(id);
 
-      // Soft delete - marcar como no disponible
-      const product = await this.productRepository.preload({
-        id,
-        available: false
-      });
-
-      if (!product) {
-        throw new RpcException({
-          status: 404,
-          message: `Product with id #${id} not found`
-        });
-      }
-
-      return await this.productRepository.save(product);
-
-    } catch (error) {
-      this.logger.error(`Error removing product with id ${id}:`, error);
-
-      if (error instanceof RpcException) {
-        throw error;
-      }
-
-      throw new RpcException({
-        status: 500,
-        message: `Error al eliminar el producto: ${error.message}`
-      });
-    }
+    await this.findOne(id);
+    await this.productRepository.update({ id }, { available: false });
+    return this.findOne(id);
   }
 
-  // async validateProducts(ids: number[]) {
-  //   ids = Array.from(new Set(ids));
+  async validateProducts(ids: number[]) {
 
-  //   const products = await this.productRepository.findBy({
-  //     where: {
-  //       id: {
-  //         in: ids
-  //       }
-  //     }
-  //   });
+    ids = Array.from(new Set(ids));
 
-  //   if ( products.length !== ids.length ) {
-  //     throw new RpcException({
-  //       message: 'Some products were not found',
-  //       status: HttpStatus.BAD_REQUEST,
-  //     });
-  //   }
+    this.logger.log(`Validating products with IDs: ${ids.join(', ')}`);
+    const products = await this.productRepository.find({
+      where: {
+        id: In(ids),
+        available: true, // Solo productos disponibles
+      },
+    });
 
+    this.logger.log(`Found ${products.length} products out of ${ids.length} requested`);
 
-  //   return products;
+    if (products.length !== ids.length) {
+      throw new RpcException({
+        message: 'Some products were not found',
+        status: HttpStatus.BAD_REQUEST,
+      });
+    }
 
-  // }
-
-
+    return products;
+  }
 }

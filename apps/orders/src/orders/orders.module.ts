@@ -8,15 +8,9 @@ import { OrdersService } from './orders.service';
 import { PRODUCT_SERVICE } from '../config/services';
 import { OrdersController } from './orders.controller';
 
-
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Order,
-      OrderItem
-    ]),
     ClientsModule.register([
-
       {
         name: PRODUCT_SERVICE,
         transport: Transport.TCP,
@@ -25,6 +19,10 @@ import { OrdersController } from './orders.controller';
           port: envs.port_products,
         }
       }
+    ]),
+    TypeOrmModule.forFeature([
+      Order,
+      OrderItem
     ])
   ],
   controllers: [OrdersController],

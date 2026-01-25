@@ -10,7 +10,7 @@ import { OrdersModule } from './orders/orders.module';
         TypeOrmModule.forRoot({
           type: 'postgres',
           host: process.env.DB_HOST_ORDERS,
-          port: +(process.env.DB_PORT_ORDERS || 5432),
+          port: +(process.env.DB_PORT_ORDERS || 5433),
           database: process.env.DB_NAME_ORDERS,
           username: process.env.DB_USERNAME_ORDERS,
           password: process.env.DB_PASSWORD_ORDERS,
