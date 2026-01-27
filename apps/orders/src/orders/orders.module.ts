@@ -5,18 +5,18 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { envs } from '../config';
 import { Order, OrderItem } from './entities';
 import { OrdersService } from './orders.service';
-import { PRODUCT_SERVICE } from '../config/services';
+import { NATS_SERVERS } from '../config/services';
 import { OrdersController } from './orders.controller';
+
 
 @Module({
   imports: [
     ClientsModule.register([
       {
-        name: PRODUCT_SERVICE,
-        transport: Transport.TCP,
+        name: NATS_SERVERS,
+        transport: Transport.NATS,
         options: {
-          host: envs.localhost_products,
-          port: envs.port_products,
+          servers: envs.nats_servers,
         }
       }
     ]),

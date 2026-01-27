@@ -6,7 +6,7 @@ import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 
 import { ChangeOrderStatusDto } from './dto';
 import { Order } from './entities/order.entity';
-import { PRODUCT_SERVICE } from '../config/services';
+import { NATS_SERVERS } from '../config/services';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderItem } from './entities/orderItem.entity';
 import { OrderPaginationDto } from './dto/order-pagination.dto';
@@ -19,7 +19,7 @@ export class OrdersService {
   private readonly logger = new Logger('OrdersService');
 
   constructor(
-    @Inject(PRODUCT_SERVICE) private readonly productsClient: ClientProxy,
+    @Inject(NATS_SERVERS) private readonly client: ClientProxy,
 
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
@@ -37,7 +37,7 @@ export class OrdersService {
       this.logger.log(`Validating products: ${productIds.join(', ')}`);
 
       const products: any[] = await firstValueFrom(
-        this.productsClient.send({ cmd: 'validate_products' }, productIds),
+        this.client.send({ cmd: 'validate_products' }, productIds),
       );
 
       this.logger.log(`Products validated: ${products.length} products found`);
@@ -163,7 +163,7 @@ export class OrdersService {
 
     const productIds = order.orderItems.map((orderItem) => orderItem.productId);
     const products: any[] = await firstValueFrom(
-      this.productsClient.send({ cmd: 'validate_products' }, productIds),
+      this.client.send({ cmd: 'validate_products' }, productIds),
     );
 
     return {

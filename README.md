@@ -31,7 +31,9 @@
 3. Crear un archivo `.env` basado en el `env.template`
 4. Ejecutar migración de Base de datos
 5. Levantar la base de datos con `docker compose up -d`
-5. Ejecutar 
+6. Ejecutar 
  `npm run start:gateway`
  `npm run start:products`
  `npm run start:orders`
+
+7. NATS=docker run -d --name nats-main -p 4222:4222 -p 8222:8222 nats
