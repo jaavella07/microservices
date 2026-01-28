@@ -1,0 +1,15 @@
+FROM node:21-alpine3.19
+
+WORKDIR /usr/src/app
+
+#copiar package.json del monorepo
+COPY package*.json ./
+RUN npm install
+
+# copiar todo el repo
+COPY . .
+
+# moverse a la app
+WORKDIR /usr/src/app/apps/products
+
+EXPOSE 3000

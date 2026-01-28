@@ -1,0 +1,34 @@
+
+# services:
+#   client-gateway:
+#     build: ./apps/client-gateway
+#     ports:
+#       - "3000:3000"
+#     volumes:
+#       - ./apps/client-gateway/src:/usr/src/app/src
+#     command: npm run start:gateway
+services:
+  nats-server:
+    image: nats:latest
+    ports:
+      - "8222:8222"
+
+  client-gateway:
+    build:
+      context: .
+      dockerfile: apps/client-gateway/Dockerfile
+    ports:
+      - "3000:3000"
+    command: npm run start:gateway
+    environment:
+      - PORT_GATEWAY=3000
+      - NATS_SERVERS=nats://nats-server:4222
+
+  products-ms:
+    build:
+      context: .
+      dockerfile: apps/products/Dockerfile
+    command: npm run start:products
+    environment:
+      - PORT_PRODUCTS=3001
+      - NATS_SERVERS=nats://nats-server:4222
