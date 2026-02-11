@@ -1,17 +1,72 @@
 
-# services:
-#   client-gateway:
-#     build: ./apps/client-gateway
-#     ports:
-#       - "3000:3000"
-#     volumes:
-#       - ./apps/client-gateway/src:/usr/src/app/src
-#     command: npm run start:gateway
+#   # orders-ms:
+#   #   depends_on:
+#   #     - orders-db
+#   #   build:
+#   #     context: .
+#   #     dockerfile: apps/orders/Dockerfile
+#   #   command: npm run start:orders
+#   #   environment:
+#   #     - PORT_ORDERS=3002
+#   #     - NATS_SERVERS=nats://nats-server:4222
+  
+#   # orders-db:
+#   #   image: postgres:16
+#   #   restart: always
+#   #   ports:
+#   #     - "5433:5432"
+#   #   environment:
+#   #     - POSTGRES_USER=postgres
+#   #     - POSTGRES_PASSWORD=Passw@rd
+#   #     - POSTGRES_DB=orders_db
+#   #   container_name: orders
+#   #   volumes:
+#   #     - ./postgres:/var/lib/postgresql/data
+
+
 services:
   nats-server:
     image: nats:latest
     ports:
       - "8222:8222"
+
+  products-db:
+    image: postgres:16
+    container_name: products_database
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Passw@rd
+      POSTGRES_DB: products
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - ./postgres/products:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d products"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+      start_period: 30s  # ← Espera 30s antes de empezar health checks
+
+  products-ms:
+    depends_on:
+      products-db:
+        condition: service_healthy  # ← Espera a que el health check pase
+    build:
+      context: .
+      dockerfile: apps/products/Dockerfile
+    restart: on-failure  # ← Reinicia si falla
+    command: npm run start:products
+    environment:
+      - PORT_PRODUCTS=3001
+      - NATS_SERVERS=nats://nats-server:4222
+      - DB_HOST=products-db
+      - DB_PORT=5432
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=Passw@rd
+      - DB_NAME=products
 
   client-gateway:
     build:
@@ -23,50 +78,3 @@ services:
     environment:
       - PORT_GATEWAY=3000
       - NATS_SERVERS=nats://nats-server:4222
-
-  products-ms:
-    depends_on:
-      - products-db
-    build:
-      context: .
-      dockerfile: apps/products/Dockerfile
-    command: npm run start:products
-    environment:
-      - PORT_PRODUCTS=3001
-      - NATS_SERVERS=nats://nats-server:4222
-  products-db:
-    image: postgres:16
-    restart: always
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=Passw@rd
-      - POSTGRES_DB=products_db
-    container_name: products
-    volumes:
-      - ./postgres:/var/lib/postgresql/data
-
-  orders-ms:
-    depends_on:
-      - orders-db
-    build:
-      context: .
-      dockerfile: apps/orders/Dockerfile
-    command: npm run start:orders
-    environment:
-      - PORT_ORDERS=3002
-      - NATS_SERVERS=nats://nats-server:4222
-  
-  orders-db:
-    image: postgres:16
-    restart: always
-    ports:
-      - "5433:5432"
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=Passw@rd
-      - POSTGRES_DB=orders_db
-    container_name: orders
-    volumes:
-      - ./postgres:/var/lib/postgresql/data
