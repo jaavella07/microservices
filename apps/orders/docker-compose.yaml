@@ -1,14 +1,14 @@
 
-# services:
-#   db:
-#     image: postgres:16
-#     restart: always
-#     ports:
-#       - "5433:5432"
-#     environment:
-#       POSTGRES_USER: ${DB_USERNAME_ORDERS}
-#       POSTGRES_PASSWORD: ${DB_PASSWORD_ORDERS} 
-#       POSTGRES_DB: ${DB_NAME_ORDERS}
-#     container_name: orders
-#     volumes:
-#       - ./postgres:/var/lib/postgresql/data
+services:
+  db:
+    image: postgres:16
+    restart: always
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: ${DB_USERNAME_ORDERS}
+      POSTGRES_PASSWORD: ${DB_PASSWORD_ORDERS} 
+      POSTGRES_DB: ${DB_NAME_ORDERS}
+    container_name: orders
+    volumes:
+      - ./postgres:/var/lib/postgresql/data

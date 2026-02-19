@@ -7,7 +7,7 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
 
-  // console.log(envs.nats_servers)
+  console.log(envs.nats_servers)
   const logger = new Logger('MicroServices-Products');
 
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
