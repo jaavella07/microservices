@@ -58,7 +58,6 @@ export const envs = {
 
   nats_servers: envVars.NATS_SERVERS,
 
-
   dbhost: envVars.DB_HOST_ORDERS,
   dbport: envVars.DB_PORT_ORDERS,
   dbname: envVars.DB_NAME_ORDERS,
