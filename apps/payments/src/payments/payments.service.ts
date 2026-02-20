@@ -42,39 +42,39 @@ export class PaymentsService {
     return session;
   }
 
-  // async stripeWebhook(req: Request, res: Response) {
-  //   const sig = req.headers['stripe-signature'];
+  async stripeWebhook(req: Request, res: Response) {
+    const sig = req.headers['stripe-signature'] as string;
 
-  //   let event: Stripe.Event;
+    let event: Stripe.Event;
 
-  //   // Real
-  //   const endpointSecret = envs.stripeEndpointSecret;
+    // Real
+    const endpointSecret = envs.stripeEndpointSecret;
 
-  //   try {
-  //     event = this.stripe.webhooks.constructEvent(
-  //       req['rawBody'],
-  //       sig,
-  //       endpointSecret,
-  //     );
-  //   } catch (err) {
-  //     res.status(400).send(`Webhook Error: ${err.message}`);
-  //     return;
-  //   }
+    try {
+      event = this.stripe.webhooks.constructEvent(
+        req['rawBody'],
+        sig,
+        endpointSecret,
+      );
+    } catch (err) {
+      res.status(400).send(`Webhook Error: ${err.message}`);
+      return;
+    }
     
-  //   switch( event.type ) {
-  //     case 'charge.succeeded': 
-  //       const chargeSucceeded = event.data.object;
-  //       // TODO: llamar nuestro microservicio
-  //       console.log({
-  //         metadata: chargeSucceeded.metadata,
-  //         orderId: chargeSucceeded.metadata.orderId,
-  //       });
-  //     break;
+    switch( event.type ) {
+      case 'charge.succeeded': 
+        const chargeSucceeded = event.data.object;
+        // TODO: llamar nuestro microservicio
+        console.log({
+          metadata: chargeSucceeded.metadata,
+          orderId: chargeSucceeded.metadata.orderId,
+        });
+      break;
       
-  //     default:
-  //       console.log(`Event ${ event.type } not handled`);
-  //   }
+      default:
+        console.log(`Event ${ event.type } not handled`);
+    }
 
-  //   return res.status(200).json({ sig });
-  // }
+    return res.status(200).json({ sig });
+  }
 }
