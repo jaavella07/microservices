@@ -4,12 +4,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 
-import { ChangeOrderStatusDto } from './dto';
 import { Order } from './entities/order.entity';
+import { OrderStatus } from './entities/order.entity';
 import { NATS_SERVERS } from '../config/services';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderItem } from './entities/orderItem.entity';
+import { ChangeOrderStatusDto, PaidOrderDto } from './dto';
 import { OrderPaginationDto } from './dto/order-pagination.dto';
+import { OrderWithProducts } from '../interfaces/order-with-produts.interface';
 
 
 
@@ -30,7 +32,7 @@ export class OrdersService {
   ) { }
 
   async create(createOrderDto: CreateOrderDto) {
-    
+
     try {
       // 1. Confirmar los ids de los productos
       const productIds = createOrderDto.items.map((item) => item.productId);
@@ -190,4 +192,42 @@ export class OrdersService {
 
     return this.findOne(id);
   }
+
+  async createPaymentSession(order: OrderWithProducts) {
+
+    const paymentSession = await firstValueFrom(
+      this.client.send('create.payment.session', {
+        orderId: order.id,
+        currency: 'usd',
+        items: order.orderItems.map(item => ({
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+      }),
+    );
+    return paymentSession;
+  }
+
+
+
+  // async paidOrder( paidOrderDto: PaidOrderDto) {
+
+  //   this.logger.log('Order Paid');
+  //   this.logger.log(paidOrderDto);
+
+  //   await this.orderRepository.update(
+  //     { id: paidOrderDto.orderId },
+  //     {
+  //       // status: OrderStatus.PENDING, // status will be updated to PAID in the changeStatus method triggered by the event
+  //       status: 'PAID',
+  //       paid: true,
+  //       paidAt: new Date(),
+  //       stripeChargeId: paidOrderDto.stripePaymentId,
+  //     }
+  //   );
+
+  //   return this.findOne(paidOrderDto.orderId);
+
+  // }
 }

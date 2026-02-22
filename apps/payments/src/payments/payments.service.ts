@@ -39,7 +39,12 @@ export class PaymentsService {
       cancel_url: envs.stripeCancelUrl,
     });
 
-    return session;
+    // return session;
+    return {
+      cancelUrl: session.cancel_url,
+      successUrl: session.success_url,
+      url: session.url,
+    }
   }
 
   async stripeWebhook(req: Request, res: Response) {
@@ -60,21 +65,24 @@ export class PaymentsService {
       res.status(400).send(`Webhook Error: ${err.message}`);
       return;
     }
-    
-    switch( event.type ) {
-      case 'charge.succeeded': 
+
+    switch (event.type) {
+      case 'charge.succeeded':
         const chargeSucceeded = event.data.object;
         // TODO: llamar nuestro microservicio
         console.log({
           metadata: chargeSucceeded.metadata,
           orderId: chargeSucceeded.metadata.orderId,
         });
-      break;
-      
+        break;
+
       default:
-        console.log(`Event ${ event.type } not handled`);
+        console.log(`Event ${event.type} not handled`);
     }
 
     return res.status(200).json({ sig });
   }
+
+
+
 }

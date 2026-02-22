@@ -1,81 +1,82 @@
-
-# #   # orders-ms:
-# #   #   depends_on:
-# #   #     - orders-db
-# #   #   build:
-# #   #     context: .
-# #   #     dockerfile: apps/orders/Dockerfile
-# #   #   command: npm run start:orders
-# #   #   environment:
-# #   #     - PORT_ORDERS=3002
-# #   #     - NATS_SERVERS=nats://nats-server:4222
-  
-# #   # orders-db:
-# #   #   image: postgres:16
-# #   #   restart: always
-# #   #   ports:
-# #   #     - "5433:5432"
-# #   #   environment:
-# #   #     - POSTGRES_USER=postgres
-# #   #     - POSTGRES_PASSWORD=Passw@rd
-# #   #     - POSTGRES_DB=orders_db
-# #   #   container_name: orders
-# #   #   volumes:
-# #   #     - ./postgres:/var/lib/postgresql/data
+# version: '3'
 
 
 # services:
+
+  
 #   nats-server:
 #     image: nats:latest
 #     ports:
 #       - "8222:8222"
-
-#   products-db:
-#     image: postgres:16
-#     container_name: products_database
-#     restart: always
-#     ports:
-#       - "5432:5432"
-#     environment:
-#       POSTGRES_USER: postgres
-#       POSTGRES_PASSWORD: Passw@rd
-#       POSTGRES_DB: products
-#       POSTGRES_HOST_AUTH_METHOD: trust
-#     volumes:
-#       - ./postgres/products:/var/lib/postgresql/data
-#     healthcheck:
-#       test: ["CMD-SHELL", "pg_isready -U postgres -d products"]
-#       interval: 3s
-#       timeout: 5s
-#       retries: 10
-#       start_period: 30s  # ← Espera 30s antes de empezar health checks
-
-#   products-ms:
-#     depends_on:
-#       products-db:
-#         condition: service_healthy  # ← Espera a que el health check pase
-#     build:
-#       context: .
-#       dockerfile: apps/products/Dockerfile
-#     restart: on-failure  # ← Reinicia si falla
-#     command: npm run start:products
-#     environment:
-#       - PORT_PRODUCTS=3001
-#       - NATS_SERVERS=nats://nats-server:4222
-#       - DB_HOST=products-db
-#       - DB_PORT=5432
-#       - DB_USERNAME=postgres
-#       - DB_PASSWORD=Passw@rd
-#       - DB_NAME=products
-      
+    
 
 #   client-gateway:
-#     build:
-#       context: .
-#       dockerfile: apps/client-gateway/Dockerfile
+#     build: ./client-gateway
 #     ports:
-#       - "3000:3000"
-#     command: npm run start:gateway
+#       - ${CLIENT_GATEWAY_PORT}:3000
+#     volumes:
+#       - ./client-gateway/src:/usr/src/app/src
+#     command: npm run start:dev
 #     environment:
-#       - PORT_GATEWAY:3000
+#       - PORT=3000
 #       - NATS_SERVERS=nats://nats-server:4222
+
+#   products-ms:
+#     build: ./products-ms
+#     volumes:
+#       - ./products-ms/src:/usr/src/app/src
+#     command: npm run start:dev
+#     environment:
+#       - PORT=3001
+#       - NATS_SERVERS=nats://nats-server:4222
+#       - DATABASE_URL=file:./dev.db
+
+  
+#   # Orders MS
+#   orders-ms:
+#     depends_on:
+#       - orders-db
+#     build: ./orders-ms
+#     volumes:
+#       - ./orders-ms/src:/usr/src/app/src
+#     command: npm run start:dev
+#     environment:
+#       - PORT=3002
+#       - DATABASE_URL=postgresql://postgres:123456@orders-db:5432/ordersdb?schema=public
+#       - NATS_SERVERS=nats://nats-server:4222
+
+
+
+#   # Orders DB
+#   orders-db:
+#     container_name: orders_database
+#     image: postgres:16.2
+#     restart: always
+#     volumes:
+#       - ./orders-ms/postgres:/var/lib/postgresql/data
+#     ports:
+#       - 5432:5432
+#     environment:
+#       - POSTGRES_USER=postgres
+#       - POSTGRES_PASSWORD=123456
+#       - POSTGRES_DB=ordersdb
+
+# # ======================
+# # Payments Microservice
+# # ======================
+#   payments-ms:
+#     container_name: payments-ms
+#     build: ./payments-ms
+#     volumes:
+#       - ./payments-ms/src:/usr/src/app/src
+#     command: npm run start:dev
+#     ports:
+#       - ${PAYMENTS_MS_PORT}:${PAYMENTS_MS_PORT}
+#     environment:
+#       - PORT=${PAYMENTS_MS_PORT}
+#       - NATS_SERVERS=nats://nats-server:4222
+#       - STRIPE_SECRET=${STRIPE_SECRET}
+#       - STRIPE_SUCCESS_URL=${STRIPE_SUCCESS_URL}
+#       - STRIPE_CANCEL_URL=${STRIPE_CANCEL_URL}
+#       - STRIPE_ENDPOINT_SECRET=${STRIPE_ENDPOINT_SECRET}
+      
